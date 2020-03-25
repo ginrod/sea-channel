@@ -1,15 +1,6 @@
 import numpy, math, heapq, uuid
 from queue import Queue
 
-TEST_CASE_JSON = []
-SHIPS_ON_PHASE = {
-    'Ship Arrival to Dike': 0,
-    'Open Floodgate':0,
-    'Ship Into Dike':0,
-    'Transporting from Dike':0,
-    'Ship Departure from Channel':0
-}
-
 def big_ship_arrival(t):
     t *= 60
     miu, sigma = 45, math.sqrt(3)
@@ -44,53 +35,6 @@ def small_ship_arrival(t):
 
     return abs(numpy.random.normal(miu, sigma))
 
-def space_in_dike_line(line):
-    return 6 - Sum(line)
-
-def simulate_ships_arrival(eventsQueue, simulationTime):
-
-    ssa = small_ship_arrival(simulationTime) + simulationTime
-    msa = medium_ship_arrival(simulationTime) + simulationTime
-    bsa = big_ship_arrival(simulationTime) + simulationTime
-
-    heapq.heappush(eventsQueue, (ssa, {'type': 'Ship Arrival to Dike', 'ship': {'size': 1, 'id': uuid.uuid4().hex}, 'dike': 0}))
-    heapq.heappush(eventsQueue, (msa, {'type': 'Ship Arrival to Dike', 'ship': {'size': 2, 'id': uuid.uuid4().hex}, 'dike': 0}))
-    heapq.heappush(eventsQueue, (bsa, {'type': 'Ship Arrival to Dike', 'ship': {'size': 4, 'id': uuid.uuid4().hex}, 'dike': 0}))
-    
-    TEST_CASE_JSON.append((ssa, {'type': 'Ship Arrival to Dike', 'ship': {'size': 1, 'id': uuid.uuid4().hex}, 'dike': 0}))
-    TEST_CASE_JSON.append((msa, {'type': 'Ship Arrival to Dike', 'ship': {'size': 2, 'id': uuid.uuid4().hex}, 'dike': 0}))
-    TEST_CASE_JSON.append((bsa, {'type': 'Ship Arrival to Dike', 'ship': {'size': 4, 'id': uuid.uuid4().hex}, 'dike': 0}))
-    
-
-def Sum(line):
-    s = 0
-    for ship in line:
-        s += ship['size']
-    
-    return s
-
-def check_repeated_ships(dikes):
-    ships = []
-    repeated = []
-    for dike in dikes:
-        for line in dike:
-            for ship in line:
-                if ship in ships:
-                    repeated.append(ship)
-                else:
-                    ships.append(ship)
-    
-    return repeated
-
-def in_dikes(ship, dikes):
-    for dike in dikes:
-        for line in dike:
-            for s in line:
-                if s == ship:
-                    return True
-    
-    return False
-
 def ship_arrival(event, eventsQueue, floodgate, dikes, queue, entringToDike, shipsInDikes, simulationTime, leavingFromDike):
     d = event['dike']
     ship = event['ship']
@@ -102,7 +46,6 @@ def ship_arrival(event, eventsQueue, floodgate, dikes, queue, entringToDike, shi
         openTime = numpy.random.exponential(1/4) + simulationTime
         openEvent = {'type': 'Open Floodgate', 'dike': d}
         heapq.heappush(eventsQueue, (openTime, openEvent))
-        TEST_CASE_JSON.append((openTime, openEvent))
         queue[d].append(ship)
         return
 
@@ -113,7 +56,6 @@ def ship_arrival(event, eventsQueue, floodgate, dikes, queue, entringToDike, shi
             timeToEnter = numpy.random.exponential(1/2) + simulationTime
             enterEvent = {'type': 'Ship Into Dike', 'dike': d, 'ship': ship}
             heapq.heappush(eventsQueue, (timeToEnter, enterEvent))
-            TEST_CASE_JSON.append((timeToEnter, enterEvent))
             entringToDike[d] += 1
         elif ship['size'] + dikes[d][1] <= 6:
             dikes[d][1] += ship['size']
@@ -121,7 +63,6 @@ def ship_arrival(event, eventsQueue, floodgate, dikes, queue, entringToDike, shi
             timeToEnter = numpy.random.exponential(1/2)
             enterEvent = {'type': 'Ship Into Dike', 'dike': d, 'ship': ship}
             heapq.heappush(eventsQueue, (timeToEnter, enterEvent))
-            TEST_CASE_JSON.append((timeToEnter, enterEvent))
             entringToDike[d] += 1
         else:
             queue[d].append(ship)
@@ -149,7 +90,6 @@ def open_floodgate(event, eventsQueue, floodgate, dikes, queue, entringToDike, s
             timeToEnter = numpy.random.exponential(1/2) + simulationTime
             enterEvent = {'type': 'Ship Into Dike', 'dike': d, 'ship': ship}
             heapq.heappush(eventsQueue, (timeToEnter, enterEvent))
-            TEST_CASE_JSON.append((timeToEnter, enterEvent))
             shipsToRemove.append(ship)
             entringToDike[d] += 1
         elif ship['size'] + dikes[d][1]<= 6:
@@ -158,7 +98,6 @@ def open_floodgate(event, eventsQueue, floodgate, dikes, queue, entringToDike, s
             timeToEnter = numpy.random.exponential(1/2) + simulationTime
             enterEvent = {'type': 'Ship Into Dike', 'dike': d, 'ship': ship}
             heapq.heappush(eventsQueue, (timeToEnter, enterEvent))
-            TEST_CASE_JSON.append((timeToEnter, enterEvent))
             shipsToRemove.append(ship)
             entringToDike[d] += 1
         
@@ -181,7 +120,6 @@ def ship_into_dike(event, eventsQueue, floodgate, dikes, queue, pendingToEnter, 
         transportingTime = numpy.random.exponential(1/7) + simulationTime
         TransportingEvent = {'type': 'Transporting from Dike', 'dike': d}
         heapq.heappush(eventsQueue, (transportingTime, TransportingEvent))
-        TEST_CASE_JSON.append((transportingTime, TransportingEvent))
 
 def transporting_ships(event, eventsQueue, floodgate, dikes, queue, pendingToEnter, shipsInDikes, leavingFromDike, simulationTime):
     d = event['dike']
@@ -200,20 +138,15 @@ def transporting_ships(event, eventsQueue, floodgate, dikes, queue, pendingToEnt
                          'dike': d+1,
                          'ship': ship}
             heapq.heappush(eventsQueue, (exitTime, exitEvent))
-            TEST_CASE_JSON.append((exitTime, exitEvent))
         else:
             exitEvent = {'type': 'Ship Departure from Channel',
                          'ship': ship}
             heapq.heappush(eventsQueue, (exitTime, exitEvent))
-            TEST_CASE_JSON.append((exitTime, exitEvent))
         
         leavingFromDike[d] += 1
 
-def create_ship(size):
-    return {'size': size, 'id': uuid.uuid4().hex}
-
 def create_ship_arrival_event(size):
-    return {'type': 'Ship Arrival to Dike', 'ship': {'size': 1, 'id': uuid.uuid4().hex}, 'dike': 0} 
+    return {'type': 'Ship Arrival to Dike', 'ship': {'size': size, 'id': uuid.uuid4().hex}, 'dike': 0} 
 
 def simulate_all_arrivals(simulationTime, maxSimulationTime):
     ssa = small_ship_arrival(simulationTime) + simulationTime
@@ -236,14 +169,14 @@ def simulate_all_arrivals(simulationTime, maxSimulationTime):
         t += medium_ship_arrival(t)
         if t > maxSimulationTime:
             break
-        medium_ships.append((t, create_ship_arrival_event(1)))
+        medium_ships.append((t, create_ship_arrival_event(2)))
     
     t = big_ships[0][0]
     while True:
         t += big_ship_arrival(t)
         if t > maxSimulationTime:
             break
-        big_ships.append((t, create_ship_arrival_event(1)))
+        big_ships.append((t, create_ship_arrival_event(4)))
     
     return small_ships + medium_ships + big_ships
 
@@ -268,16 +201,7 @@ def simulate_sea_channel():
     entringToDike = [0] * 5
     leavingFromDike = [0] * 5
 
-    # with open('test_case.json', 'r') as f:
-    #     import json
-    #     eventsQueue = json.load(f)
-    #     heapq.heapify(eventsQueue)
-
-    while True:
-    # while simulationTime <= maxSimulationTime:
-        if not eventsQueue:
-            break
-
+    while len(eventsQueue) > 0:
         eventTime, event = heapq.heappop(eventsQueue)
         simulationTime = eventTime
 
@@ -285,9 +209,6 @@ def simulate_sea_channel():
 
             ship, d = event['ship'], event['dike']
             arrivalTimeToDike[d][ship['id']] = simulationTime
-
-            if d == 4:
-                foo = 0
 
             if d > 0:
                 leavingFromDike[d-1] -= 1
@@ -304,7 +225,6 @@ def simulate_sea_channel():
                         openTime = numpy.random.exponential(1/4) + simulationTime
                         openEvent = {'type': 'Open Floodgate', 'dike': d-1}
                         heapq.heappush(eventsQueue, (openTime, openEvent))
-                        TEST_CASE_JSON.append((openTime, openEvent))
 
             ship_arrival(
                 event = event, 
