@@ -1,5 +1,4 @@
 import numpy, math, heapq, uuid
-from queue import Queue
 
 def big_ship_arrival(t):
     t *= 60
@@ -73,9 +72,6 @@ def ship_arrival(event, eventsQueue, floodgate, dikes, queue, entringToDike, shi
 def open_floodgate(event, eventsQueue, floodgate, dikes, queue, entringToDike, shipsInDikes, simulationTime):
     d = event['dike']
 
-    if d == 4:
-        foo = 0
-
     if floodgate[d] != 'opening':
         raise Exception(f'La puerta del dique {d} estaba {floodgate[d]} al mandarse a abrir')
     
@@ -109,7 +105,7 @@ def open_floodgate(event, eventsQueue, floodgate, dikes, queue, entringToDike, s
     
     floodgate[d] = 'open'
 
-def ship_into_dike(event, eventsQueue, floodgate, dikes, queue, pendingToEnter, simulationTime):
+def ship_into_dike(event, eventsQueue, floodgate, pendingToEnter, simulationTime):
     ship, d = event['ship'], event['dike']
 
     if floodgate[d] != 'open':
@@ -121,7 +117,7 @@ def ship_into_dike(event, eventsQueue, floodgate, dikes, queue, pendingToEnter, 
         TransportingEvent = {'type': 'Transporting from Dike', 'dike': d}
         heapq.heappush(eventsQueue, (transportingTime, TransportingEvent))
 
-def transporting_ships(event, eventsQueue, floodgate, dikes, queue, pendingToEnter, shipsInDikes, leavingFromDike, simulationTime):
+def transporting_ships(event, eventsQueue, floodgate, shipsInDikes, leavingFromDike, simulationTime):
     d = event['dike']
     
     if floodgate[d] != 'closing':
@@ -195,7 +191,6 @@ def simulate_sea_channel():
 
     eventsQueue = simulate_all_arrivals(simulationTime, maxSimulationTime)
     totalOfShips = len(eventsQueue)
-    
     heapq.heapify(eventsQueue)
 
     entringToDike = [0] * 5
@@ -251,15 +246,10 @@ def simulate_sea_channel():
         if event['type'] == 'Ship Into Dike':
             d = event['dike']
 
-            if d == 4:
-                foo = 0
-
             entringToDike[d] -= 1
             ship_into_dike(
                 event = event, 
                 floodgate = floodgate, 
-                dikes = dikes, 
-                queue = queue,
                 eventsQueue = eventsQueue,
                 pendingToEnter = entringToDike,
                 simulationTime = simulationTime)
@@ -271,10 +261,7 @@ def simulate_sea_channel():
             transporting_ships(
                 event = event, 
                 floodgate = floodgate, 
-                dikes = dikes, 
-                queue = queue,
                 eventsQueue = eventsQueue,
-                pendingToEnter = entringToDike,
                 leavingFromDike = leavingFromDike,
                 shipsInDikes = shipsInDikes,
                 simulationTime = simulationTime)
