@@ -214,12 +214,19 @@ def simulate_sea_channel():
 
                     if floodgate[d-1] != 'close':
                         raise Exception(f'Los barcos pasaron al dique {d} y la puerta del dique {d-1} estaba {floodgate[d-1]}')
+                    
+                    leavingFromDike[d-1] += 1
+                    openFloodgateTime = numpy.random.exponential(1/4)
+                    floodDikeTime = numpy.random.exponential(1/7) 
+                    retoreToDeafultTime = openFloodgateTime + floodDikeTime + simulationTime
+                    eventRestoreToDefault = {'type': 'Restore Default Dike State', 'dike': d-1}
+                    heapq.heappush(eventsQueue, (retoreToDeafultTime, eventRestoreToDefault))
 
-                    if len(queue[d-1]) > 0 and floodgate[d-1] == 'close':
-                        floodgate[d-1] = 'opening'
-                        openTime = numpy.random.exponential(1/4) + simulationTime
-                        openEvent = {'type': 'Open Floodgate', 'dike': d-1}
-                        heapq.heappush(eventsQueue, (openTime, openEvent))
+                    # if len(queue[d-1]) > 0:
+                    #     floodgate[d-1] = 'opening'
+                    #     openTime = numpy.random.exponential(1/4) + simulationTime
+                    #     openEvent = {'type': 'Open Floodgate', 'dike': d-1}
+                    #     heapq.heappush(eventsQueue, (openTime, openEvent))
 
             ship_arrival(
                 event = event, 
@@ -232,6 +239,16 @@ def simulate_sea_channel():
                 simulationTime = simulationTime,
                 leavingFromDike = leavingFromDike)
         
+        if event['type'] == 'Restore Default Dike State':
+            d = event['dike']
+
+            leavingFromDike[d] -= 1
+            if len(queue[d]) > 0:
+                floodgate[d] = 'opening'
+                openTime = numpy.random.exponential(1/4) + simulationTime
+                openEvent = {'type': 'Open Floodgate', 'dike': d}
+                heapq.heappush(eventsQueue, (openTime, openEvent))
+
         if event['type'] == 'Open Floodgate':
             open_floodgate(
                 event = event, 
@@ -255,9 +272,6 @@ def simulate_sea_channel():
                 simulationTime = simulationTime)
 
         if event['type'] == 'Transporting from Dike':
-            if event['dike'] == 4:
-                doo = 0
-
             transporting_ships(
                 event = event, 
                 floodgate = floodgate, 
