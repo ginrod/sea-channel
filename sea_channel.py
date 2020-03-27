@@ -1,7 +1,7 @@
 import numpy, math, heapq, uuid
 
 def big_ship_arrival(t):
-    t *= 60
+    t /= 60
     miu, sigma = 45, math.sqrt(3)
 
     if 11 <= t and t < 17:
@@ -12,9 +12,8 @@ def big_ship_arrival(t):
     return numpy.random.normal(miu, sigma)
 
 def medium_ship_arrival(t):
-    t *= 60
+    t /= 60
     miu, sigma = 15, math.sqrt(3)
-
 
     if 11 <= t and t < 17:
         miu, sigma = 10, math.sqrt(5)
@@ -24,7 +23,7 @@ def medium_ship_arrival(t):
     return numpy.random.normal(miu, sigma)
 
 def small_ship_arrival(t):
-    t *= 60
+    t /= 60
     miu, sigma = 5, math.sqrt(2)
 
     if 11 <= t and t < 17:
@@ -308,5 +307,5 @@ if __name__ == '__main__':
     print(f'Para un tiempo de espera aproximado de {standingTimeSum/totalOfShips} minutos por barco')
     print(f'De los {totalOfShips} barcos...')
     print(f'Hubo {len(ships[0])} barcos pequeños')
-    print(f'Hubo {len(ships[1])} barcos pequeños')
-    print(f'Hubo {len(ships[2])} barcos pequeños')
+    print(f'Hubo {len(ships[1])} barcos medianos')
+    print(f'Hubo {len(ships[2])} barcos grandes')
