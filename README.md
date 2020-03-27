@@ -4,9 +4,6 @@ Proyecto 1 de la asignatura Simulación de Ciencias de la Computación de la Uni
 # Autor
 Gilberto González Rodríguez C-411
 
-# Prerrequisitos
-pip install -r requeriments.txt
-
 # Descarga
 git clone https://github.com/ginrod/sea-channel.git
 

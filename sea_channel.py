@@ -1,4 +1,20 @@
-import numpy, math, heapq, uuid
+import math, heapq, uuid
+from random import uniform
+
+def exp(lamb):
+    return -1/lamb * math.log(uniform(0, 1))
+
+def normal(miu, sigma):
+    Y1, Y2, Y = exp(1), exp(1), 0
+
+    while True:
+        if Y2 - (Y1 - 1) * (Y1 - 1) / 2 > 0:
+            break
+        Y1, Y2 = exp(1), exp(1)
+
+    Z = Y1 if uniform(0, 1) <= 0.5 else -Y1
+
+    return miu + sigma * Z
 
 def big_ship_arrival(t):
     t /= 60
@@ -9,7 +25,7 @@ def big_ship_arrival(t):
     elif 17 <= t and t <= 20:
         miu, sigma = 60, math.sqrt(9)
 
-    return numpy.random.normal(miu, sigma)
+    return normal(miu, sigma)
 
 def medium_ship_arrival(t):
     t /= 60
@@ -20,7 +36,7 @@ def medium_ship_arrival(t):
     elif 17 <= t and t <= 20:
         miu, sigma = 20, math.sqrt(5)
 
-    return numpy.random.normal(miu, sigma)
+    return normal(miu, sigma)
 
 def small_ship_arrival(t):
     t /= 60
@@ -31,7 +47,7 @@ def small_ship_arrival(t):
     elif 17 <= t and t <= 20:
         miu, sigma = 10, math.sqrt(2)
 
-    return abs(numpy.random.normal(miu, sigma))
+    return abs(normal(miu, sigma))
 
 def ship_arrival(event, eventsQueue, floodgate, dikes, queue, entringToDike, shipsInDikes, simulationTime, leavingFromDike):
     d = event['dike']
@@ -41,7 +57,7 @@ def ship_arrival(event, eventsQueue, floodgate, dikes, queue, entringToDike, shi
 
     if not queue[d] and floodgate[d] == 'close' and not pending:
         floodgate[d] = 'opening'
-        openTime = numpy.random.exponential(1/4) + simulationTime
+        openTime = exp(4) + simulationTime
         openEvent = {'type': 'Open Floodgate', 'dike': d}
         heapq.heappush(eventsQueue, (openTime, openEvent))
         queue[d].append(ship)
@@ -51,14 +67,14 @@ def ship_arrival(event, eventsQueue, floodgate, dikes, queue, entringToDike, shi
         if  ship['size'] + dikes[d][0] <= 6:
             dikes[d][0] += ship['size']
             shipsInDikes[d].append(ship)
-            timeToEnter = numpy.random.exponential(1/2) + simulationTime
+            timeToEnter = exp(2) + simulationTime
             enterEvent = {'type': 'Ship Into Dike', 'dike': d, 'ship': ship}
             heapq.heappush(eventsQueue, (timeToEnter, enterEvent))
             entringToDike[d] += 1
         elif ship['size'] + dikes[d][1] <= 6:
             dikes[d][1] += ship['size']
             shipsInDikes[d].append(ship)
-            timeToEnter = numpy.random.exponential(1/2)
+            timeToEnter = exp(2)
             enterEvent = {'type': 'Ship Into Dike', 'dike': d, 'ship': ship}
             heapq.heappush(eventsQueue, (timeToEnter, enterEvent))
             entringToDike[d] += 1
@@ -82,7 +98,7 @@ def open_floodgate(event, eventsQueue, floodgate, dikes, queue, entringToDike, s
         if  ship['size'] + dikes[d][0] <= 6:
             dikes[d][0] += ship['size']
             shipsInDikes[d].append(ship)
-            timeToEnter = numpy.random.exponential(1/2) + simulationTime
+            timeToEnter = exp(2) + simulationTime
             enterEvent = {'type': 'Ship Into Dike', 'dike': d, 'ship': ship}
             heapq.heappush(eventsQueue, (timeToEnter, enterEvent))
             shipsToRemove.append(ship)
@@ -90,7 +106,7 @@ def open_floodgate(event, eventsQueue, floodgate, dikes, queue, entringToDike, s
         elif ship['size'] + dikes[d][1]<= 6:
             dikes[d][1] += ship['size']
             shipsInDikes[d].append(ship)
-            timeToEnter = numpy.random.exponential(1/2) + simulationTime
+            timeToEnter = exp(2) + simulationTime
             enterEvent = {'type': 'Ship Into Dike', 'dike': d, 'ship': ship}
             heapq.heappush(eventsQueue, (timeToEnter, enterEvent))
             shipsToRemove.append(ship)
@@ -112,7 +128,7 @@ def ship_into_dike(event, eventsQueue, floodgate, pendingToEnter, simulationTime
     
     if not pendingToEnter[d]:
         floodgate[d] = 'closing'
-        transportingTime = numpy.random.exponential(1/7) + simulationTime
+        transportingTime = exp(7) + simulationTime
         TransportingEvent = {'type': 'Transporting from Dike', 'dike': d}
         heapq.heappush(eventsQueue, (transportingTime, TransportingEvent))
 
@@ -127,7 +143,7 @@ def transporting_ships(event, eventsQueue, floodgate, shipsInDikes, leavingFromD
 
     floodgate[d] = 'close'
     for ship in shipsInDikes[d]:
-        exitTime = numpy.random.exponential(1/1.5) + simulationTime
+        exitTime = exp(1.5) + simulationTime
         if d < 4:
             exitEvent = {'type': 'Ship Arrival to Dike',
                          'dike': d+1,
@@ -216,8 +232,8 @@ def simulate_sea_channel():
                         raise Exception(f'Los barcos pasaron al dique {d} y la puerta del dique {d-1} estaba {floodgate[d-1]}')
                     
                     leavingFromDike[d-1] += 1
-                    openFloodgateTime = numpy.random.exponential(1/4)
-                    floodDikeTime = numpy.random.exponential(1/7) 
+                    openFloodgateTime = exp(4)
+                    floodDikeTime = exp(7) 
                     retoreToDeafultTime = openFloodgateTime + floodDikeTime + simulationTime
                     eventRestoreToDefault = {'type': 'Restore Default Dike State', 'dike': d-1}
                     heapq.heappush(eventsQueue, (retoreToDeafultTime, eventRestoreToDefault))
@@ -239,7 +255,7 @@ def simulate_sea_channel():
             leavingFromDike[d] -= 1
             if len(queue[d]) > 0:
                 floodgate[d] = 'opening'
-                openTime = numpy.random.exponential(1/4) + simulationTime
+                openTime = exp(4) + simulationTime
                 openEvent = {'type': 'Open Floodgate', 'dike': d}
                 heapq.heappush(eventsQueue, (openTime, openEvent))
 
@@ -286,8 +302,8 @@ def simulate_sea_channel():
                 dikes[4][1] = 0
 
                 leavingFromDike[4] += 1
-                openFloodgateTime = numpy.random.exponential(1/4)
-                floodDikeTime = numpy.random.exponential(1/7) 
+                openFloodgateTime = exp(4)
+                floodDikeTime = exp(7) 
                 retoreToDeafultTime = openFloodgateTime + floodDikeTime + simulationTime
                 eventRestoreToDefault = {'type': 'Restore Default Dike State', 'dike': 4}
                 heapq.heappush(eventsQueue, (retoreToDeafultTime, eventRestoreToDefault))
